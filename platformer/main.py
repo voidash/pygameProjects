@@ -22,7 +22,19 @@ class Game:
         self.running = True
         self.font_name = pg.font.match_font(FONT_NAME)
 
+    def release_highScore(self):
+        #check for highscore in file
+        if(path.exists(HS_FILE)):
+            print("file exists")
+            F=open(HS_FILE,'r')
+            self.highScore=F.read()
+            F.close()
+        
 
+
+
+        
+        
     def new(self):
         self.score=0
         self.all_sprites = pg.sprite.Group()
@@ -69,6 +81,13 @@ class Game:
                     sprite.kill()
         if len(self.platforms) == 0:
             self.playing = False
+            if self.highScore:
+                if int(self.highScore) > self.score:
+                    self.score=self.highScore
+            else:
+                file=open(HS_FILE,'w')
+                file.write(str(self.score))
+                file.close()    
             self.show_go_screen()
 
 
@@ -130,7 +149,7 @@ class Game:
     def show_go_screen(self):
         self.screen.fill(BG_COLOR)
         self.draw_text("Saucy ",48,WHITE,WIDTH/2,HEIGHT/4)
-        self.draw_text(str("Score you got : {}".format(self.score)),22,WHITE,WIDTH/2,HEIGHT/2)
+        self.draw_text(str("HIGH SCORE IS : {}".format(self.score)),22,WHITE,WIDTH/2,HEIGHT/2)
         self.draw_text("Press any key to play again",22,WHITE,WIDTH/2,HEIGHT*3/4)
         pg.display.flip()
         self.wait_for_key()
@@ -157,7 +176,7 @@ class Game:
 
 g= Game()
 g.show_start_screen()
-
+g.release_highScore()
 while g.running:
     g.new()
     
