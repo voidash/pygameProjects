@@ -24,11 +24,18 @@ class Game:
 
     def release_highScore(self):
         #check for highscore in file
-        if(path.exists(HS_FILE)):
-            print("file exists")
+        if(path.isfile(HS_FILE)):
             F=open(HS_FILE,'r')
             self.highScore=F.read()
             F.close()
+
+    def load_data(self):
+        self.dir = path.dirname(__file__)  #current path
+        img_dir = path.join(self.dir,'img')
+
+        self.spritesheet = SpriteSheet(path.join(img_dir,SPRITESHEET))
+
+
         
 
 
@@ -42,7 +49,7 @@ class Game:
         self.platforms = pg.sprite.Group()
         self.all_sprites.add(self.player)
         for plat in PLATFORM_LIST:
-            p = Platform(*plat)  #list explosion args and kwargs
+            p = Platform(self,*plat)  #list explosion args and kwargs
             self.platforms.add(p)
             self.all_sprites.add(p)
         self.run()
@@ -64,15 +71,10 @@ class Game:
         #check if player hits platform during falling only or velocity == 0
         if self.player.vel.y > 0:
             hits = pg.sprite.spritecollide(self.player,self.platforms,False)
-            if hits:  #this thing keeps on hitting
+            if hits and self.player.return_top() < hits[0].return_top() : #this thing keeps on hitting
                 self.player.pos.y = hits[0].rect.top
                 self.player.vel.y = 0
 
-        #if player reaches top 1/4 of the screen
-
-
-
-#die
         #When player Dies or y-position is greater than height
         if self.player.rect.bottom > HEIGHT:
             for sprite in self.all_sprites:
@@ -81,23 +83,24 @@ class Game:
                     sprite.kill()
         if len(self.platforms) == 0:
             self.playing = False
-            if self.highScore:
-                if int(self.highScore) > self.score:
-                    self.score=self.highScore
+            if int(self.highScore) > self.score:
+                self.score=self.highScore
             else:
-                file=open(HS_FILE,'w')
-                file.write(str(self.score))
-                file.close()    
+                self.highScore=self.score
+                files=open(HS_FILE,'w')
+                files.write(str(self.score))
+                files.close()    
             self.show_go_screen()
 
 
 
-
+    
+        #if player reaches top 1/4 of the screen
         #print(self.player.rect.top)  returns top part of the rectangle
         if self.player.rect.top <= HEIGHT/4:
-            self.player.pos.y += abs(self.player.vel.y) #velocity is negative but we need to make this positive
+            self.player.pos.y += max(abs(self.player.vel.y),2) #velocity is negative but we need to make this positive
             for plat in self.platforms:
-                plat.rect.y += abs(self.player.vel.y)
+                plat.rect.y += max(abs(self.player.vel.y),2)
        #if platforms are below the visible screen
                 if plat.rect.top > HEIGHT:
                     self.platforms.remove(plat) #removing items from list
@@ -107,9 +110,9 @@ class Game:
         #spawn new platforms
         while len(self.platforms) < 6:
             width = random.randrange(50,100)
-            p = Platform(random.randrange(0,WIDTH-width),
+            p = Platform(self,random.randrange(0,WIDTH-width),
                         random.randrange(-75,-30),
-                        width,20)
+                        )
             self.platforms.add(p)
             self.all_sprites.add(p)
 
@@ -176,6 +179,7 @@ class Game:
 
 g= Game()
 g.show_start_screen()
+g.load_data()
 g.release_highScore()
 while g.running:
     g.new()
